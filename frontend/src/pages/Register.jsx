@@ -88,9 +88,14 @@ const Register = () => {
     setExistingUserAlert(false);
     try {
       const res = await api.post('/auth/register', { username, email, password });
-      login(res.data.data, res.data.data.token);
+      const userData = res.data.data;
+      login(userData, userData.token);
       showToast(`${t('Welcome')}, ${username}! ${t('Registration successful.')}`, 'success');
-      navigate('/dashboard');
+      if (isAdminUser(userData)) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       const msg = err.message || t('Registration failed. Try again.');
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exist')) {
