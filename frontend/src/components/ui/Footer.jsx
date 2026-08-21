@@ -6,6 +6,7 @@ import {
   Loader2, Globe, HelpCircle, Briefcase, FileText, Lock, Building2 
 } from 'lucide-react';
 import axios from 'axios';
+import api from '../../utils/api';
 import { useApp } from '../../context/AppContext';
 import { isAdminUser } from '../../utils/admin';
 
@@ -41,7 +42,7 @@ export const Footer = () => {
     }
     setLoading(true);
     try {
-      await axios.post('http://localhost:8080/api/contact', formData);
+      await api.post('/contact', formData);
       setSubmitted(true);
       showToast('Message sent! Support team will respond shortly.', 'success');
       setTimeout(() => {

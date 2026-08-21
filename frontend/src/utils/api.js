@@ -1,12 +1,33 @@
 import axios from 'axios';
 
+export const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  const storedUrl = localStorage.getItem('custom_backend_url');
+  if (storedUrl && storedUrl.trim()) {
+    let clean = storedUrl.trim();
+    if (!clean.endsWith('/api')) {
+      clean = clean.replace(/\/+$/, '') + '/api';
+    }
+    return clean;
+  }
+  return 'http://localhost:8080/api';
+};
+
+export const getBackendOrigin = () => {
+  const baseUrl = getApiBaseUrl();
+  return baseUrl.replace(/\/api\/?$/, '');
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: getApiBaseUrl(),
   timeout: 30000,
 });
 
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = getApiBaseUrl();
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -32,9 +53,9 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    // Return standard error messages from spring responses or connection error message
-    const message = error.response?.data?.message || (!error.response ? 'Unable to connect to backend server (localhost:8080)' : 'Something went wrong');
-    return Promise.reject({ ...error, message });
+    const isNetworkError = !error.response || error.code === 'ERR_NETWORK';
+    const message = error.response?.data?.message || (isNetworkError ? 'Backend server unreachable. Ensure backend is running or set API URL.' : 'Something went wrong');
+    return Promise.reject({ ...error, message, isNetworkError });
   }
 );
 

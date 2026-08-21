@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Code2, ArrowRight, Chrome } from 'lucide-react';
 import Lottie from 'lottie-react';
 import { useApp } from '../context/AppContext';
-import api from '../utils/api';
+import api, { getBackendOrigin } from '../utils/api';
 import PillNav from '../components/ui/PillNav';
 import devTeamAnimation from '../assets/lottie/dev_team.json';
 import PageTransition from '../components/ui/PageTransition';
@@ -101,7 +101,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = getBackendOrigin() + '/oauth2/authorization/google';
   };
 
   return (

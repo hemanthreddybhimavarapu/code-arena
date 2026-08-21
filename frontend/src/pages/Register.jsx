@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Code2, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import Lottie from 'lottie-react';
 import { useApp } from '../context/AppContext';
-import api from '../utils/api';
+import api, { getBackendOrigin } from '../utils/api';
 import PillNav from '../components/ui/PillNav';
 import aiAbstractAnimation from '../assets/lottie/ai_abstract.json';
 import PageTransition from '../components/ui/PageTransition';
@@ -103,7 +103,7 @@ const Register = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = getBackendOrigin() + '/oauth2/authorization/google';
   };
 
   return (
