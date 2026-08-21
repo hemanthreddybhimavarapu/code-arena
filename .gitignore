@@ -1,0 +1,13 @@
+# Build and output directories
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# Secrets and local configurations
+backend/src/main/resources/application-secrets.yml
+
+# Logs and temporary files
+*.log
+hs_err_*.log
+replay_*.log
+.gemini/

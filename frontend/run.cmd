@@ -1,0 +1,3 @@
+@echo off
+echo Starting CodeArena Frontend Dev Server...
+npm run dev
