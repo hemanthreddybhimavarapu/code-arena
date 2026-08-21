@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, LogOut, ShieldAlert, Award, Code2, User, Camera, KeyRound, Flame, Palette, Check, Search, Command, Type, Menu, X, BookOpen, BarChart3, LayoutDashboard, Globe } from 'lucide-react';
+import { Sun, Moon, LogOut, ShieldAlert, Award, Code2, User, Camera, KeyRound, Flame, Palette, Check, Search, Command, Type, Menu, X, BookOpen, BarChart3, LayoutDashboard, Globe, Server } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import api from '../utils/api';
 import GooeyNav from './ui/GooeyNav';
@@ -9,6 +9,7 @@ import NotificationCenter from './ui/NotificationCenter';
 import CommandPalette from './ui/CommandPalette';
 import ProfileModal from './ui/ProfileModal';
 import TypographyModal from './ui/TypographyModal';
+import { BackendConfigModal } from './ui/BackendConfigModal';
 import { isAdminUser } from '../utils/admin';
 
 const Navbar = () => {
@@ -21,6 +22,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [typographyOpen, setTypographyOpen] = useState(false);
+  const [backendModalOpen, setBackendModalOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [userStreak, setUserStreak] = useState(0);
   const [newAvatar, setNewAvatar] = useState('');
@@ -198,6 +200,16 @@ const Navbar = () => {
             title="Typography & Appearance Settings"
           >
             <Type className="w-4 h-4 text-purple-400" />
+          </motion.button>
+
+          {/* Backend Server Connection Setting */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setBackendModalOpen(true)}
+            className="hidden sm:flex p-2.5 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors items-center gap-1.5 text-xs font-bold"
+            title="Backend Server Connection Settings"
+          >
+            <Server className="w-4 h-4 text-cyan-400" />
           </motion.button>
 
           {/* Theme Palette Switcher Dropdown */}
@@ -565,6 +577,9 @@ const Navbar = () => {
 
       {/* Typography & Appearance Settings Modal */}
       <TypographyModal isOpen={typographyOpen} onClose={() => setTypographyOpen(false)} />
+
+      {/* Backend Server Config Modal */}
+      <BackendConfigModal isOpen={backendModalOpen} onClose={() => setBackendModalOpen(false)} showToast={showToast} />
 
       {/* Command Palette Modal */}
       <CommandPalette isOpen={commandPaletteOpen} setIsOpen={setCommandPaletteOpen} />
