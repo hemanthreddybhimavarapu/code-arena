@@ -84,7 +84,7 @@ const MainLayout = () => {
           <Route 
             path="/leaderboard" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowGuest={true}>
                 <Leaderboard />
               </ProtectedRoute>
             } 
