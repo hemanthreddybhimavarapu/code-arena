@@ -218,6 +218,51 @@ const Login = () => {
             {t('Continue with Google')}
           </motion.button>
 
+          {/* Quick Demo Access Buttons */}
+          <div className="grid grid-cols-2 gap-2.5 mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                const demoUser = {
+                  id: 999,
+                  username: 'DemoCoder',
+                  email: 'democoder@codearena.com',
+                  role: 'ROLE_USER',
+                  avatar: 'DemoCoder',
+                  currentStreak: 7,
+                  score: 1850,
+                };
+                login(demoUser, 'demo-jwt-user-token');
+                showToast('Logged in as Demo Coder!', 'success');
+                navigate('/dashboard');
+              }}
+              className="py-2.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              🚀 1-Click User Demo
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const demoAdmin = {
+                  id: 1,
+                  username: 'AdminUser',
+                  email: 'admin@codearena.com',
+                  role: 'ROLE_ADMIN',
+                  avatar: 'AdminUser',
+                  currentStreak: 14,
+                  score: 4200,
+                };
+                login(demoAdmin, 'demo-jwt-admin-token');
+                showToast('Logged in as Admin Console User!', 'success');
+                navigate('/admin');
+              }}
+              className="py-2.5 px-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellowAccent border border-yellow-500/30 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              ⚡ 1-Click Admin Demo
+            </button>
+          </div>
+
           <p className="text-center text-sm text-gray-400 mt-6">
             {t("Don't have an account?")}{' '}
             <Link to="/register" className="text-primaryBlue hover:underline font-semibold">
