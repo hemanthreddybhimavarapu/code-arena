@@ -25,4 +25,4 @@ services:
 databases:
   - name: codearena-db
     databaseName: codearena
-    user: postgres
+    user: codearena_user
