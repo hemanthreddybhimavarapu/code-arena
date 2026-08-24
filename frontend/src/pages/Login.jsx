@@ -101,7 +101,23 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = getBackendOrigin() + '/oauth2/authorization/google';
+    const origin = getBackendOrigin();
+    if (!origin || origin.includes('localhost')) {
+      showToast('Google OAuth requires a live cloud backend. Logging in with Demo account instead!', 'info');
+      const demoUser = {
+        id: 999,
+        username: 'DemoCoder',
+        email: 'democoder@codearena.com',
+        role: 'ROLE_USER',
+        avatar: 'DemoCoder',
+        currentStreak: 7,
+        score: 1850,
+      };
+      login(demoUser, 'demo-jwt-user-token');
+      navigate('/dashboard');
+      return;
+    }
+    window.location.href = origin + '/oauth2/authorization/google';
   };
 
   return (
