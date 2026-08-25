@@ -1,6 +1,14 @@
 import axios from 'axios';
 
 export const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // On production public web host, always target live cloud backend URL directly
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return 'https://code-arena-backend-pjh9.onrender.com/api';
+    }
+  }
+
   if (import.meta.env.VITE_API_URL) {
     let clean = import.meta.env.VITE_API_URL.trim();
     if (!clean.endsWith('/api')) {
@@ -8,7 +16,8 @@ export const getApiBaseUrl = () => {
     }
     return clean;
   }
-  const storedUrl = localStorage.getItem('custom_backend_url');
+
+  const storedUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('custom_backend_url') : null;
   if (storedUrl && storedUrl.trim()) {
     let clean = storedUrl.trim();
     if (!clean.endsWith('/api')) {
@@ -16,7 +25,8 @@ export const getApiBaseUrl = () => {
     }
     return clean;
   }
-  return 'https://code-arena-backend-pjh9.onrender.com/api';
+
+  return 'http://localhost:9090/api';
 };
 
 export const getBackendOrigin = () => {
@@ -32,7 +42,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     config.baseURL = getApiBaseUrl();
-    const token = localStorage.getItem('token');
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,8 +59,10 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
       const publicPaths = ['/', '/login', '/register', '/problems', '/leaderboard'];
       const isPublicRoute = publicPaths.some(path => window.location.pathname === path || window.location.pathname.startsWith('/problems/'));
       if (!isPublicRoute) {
