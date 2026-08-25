@@ -63,8 +63,15 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    const isNetworkError = !error.response || error.code === 'ERR_NETWORK';
-    const message = error.response?.data?.message || (isNetworkError ? 'Unable to connect to backend server. Please verify backend is running.' : 'Something went wrong');
+    const responseData = error.response?.data;
+    let message = 'Something went wrong';
+    if (typeof responseData === 'string' && responseData.trim()) {
+      message = responseData;
+    } else if (responseData?.message) {
+      message = responseData.message;
+    } else if (!error.response || error.code === 'ERR_NETWORK') {
+      message = 'Unable to connect to backend server. Please try again.';
+    }
     return Promise.reject({ ...error, message, isNetworkError });
   }
 );
