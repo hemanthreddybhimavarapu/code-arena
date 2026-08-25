@@ -90,23 +90,7 @@ const Login = () => {
   }, [login, navigate, showToast]);
 
   const handleGoogleLogin = () => {
-    const origin = getBackendOrigin();
-    const oauthUrl = origin + '/oauth2/authorization/google';
-
-    const width = 500;
-    const height = 650;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      oauthUrl,
-      'GoogleOAuthAccountChooserPopup',
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
-    );
-
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      window.location.href = oauthUrl;
-    }
+    setShowGoogleModal(true);
   };
 
   const handleSubmit = async (e) => {
