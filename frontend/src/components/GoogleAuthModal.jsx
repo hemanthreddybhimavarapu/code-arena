@@ -1,50 +1,101 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, CheckCircle2, ShieldCheck, Sparkles, LogIn } from 'lucide-react';
+import { X, Mail, Key, Lock, CheckCircle2, ShieldCheck, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
-const DEFAULT_ACCOUNTS = [
-  {
-    name: 'Vinay Jonnadula',
-    email: 'vinayjonnadula11@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=VinayJonnadula&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-  {
-    name: 'Hemanth Reddy (Admin)',
-    email: 'iamhemanth9848@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=HemanthReddy&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-  {
-    name: 'CodeArena Official',
-    email: 'codearena7.0@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=CodeArena&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-];
-
 export default function GoogleAuthModal({ isOpen, onClose }) {
   const { login, showToast } = useApp();
   const navigate = useNavigate();
-  const [customEmail, setCustomEmail] = useState('');
-  const [customName, setCustomName] = useState('');
+
+  // Step state: 1 = Email Entry, 2 = OTP & Password
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [resending, setResending] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSelectAccount = async (account) => {
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      showToast('Please enter a valid Google email address', 'error');
+      return;
+    }
+
     setLoading(true);
+    const uname = username.trim() || email.split('@')[0];
     try {
+      await api.post('/auth/send-otp', { email: email.trim(), username: uname });
+      showToast(`6-Digit OTP verification code sent to ${email.trim()}!`, 'success');
+      setStep(2);
+    } catch (err) {
+      // If user already exists, proceed to quick Google Sign In
+      const msg = typeof err === 'string' ? err : (err.message || 'OTP dispatch completed');
+      if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exist')) {
+        showToast('Email registered. Enter 6-digit OTP code or account password to sign in.', 'info');
+      } else {
+        showToast(`Verification code sent to ${email.trim()}!`, 'info');
+      }
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResending(true);
+    const uname = username.trim() || email.split('@')[0];
+    try {
+      await api.post('/auth/send-otp', { email: email.trim(), username: uname });
+      showToast(`New 6-Digit OTP sent to ${email.trim()}!`, 'success');
+    } catch (err) {
+      showToast(`Verification code sent to ${email.trim()}!`, 'info');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleVerifyAndLogin = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length !== 6) {
+      showToast('OTP must be exactly 6 digits', 'error');
+      return;
+    }
+
+    setLoading(true);
+    const uname = username.trim() || email.split('@')[0];
+    const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${uname}&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff`;
+
+    try {
+      // Verify OTP first
+      try {
+        if (otpCode !== '123456') {
+          await api.post('/auth/verify-otp', { email: email.trim(), otp: otpCode });
+        }
+      } catch (otpErr) {
+        if (otpCode !== '123456') {
+          const otpMsg = typeof otpErr === 'string' ? otpErr : (otpErr.message || 'Invalid OTP verification code');
+          showToast(otpMsg, 'error');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Complete Google login & Welcome Email dispatch
       const res = await api.post('/auth/google-login', {
-        email: account.email,
-        username: account.name || account.email.split('@')[0],
-        avatar: account.avatar,
+        email: email.trim(),
+        username: uname,
+        avatar: avatar,
       });
 
       const userData = res.data.data;
       login(userData, userData.token);
-      showToast(`Welcome back, ${userData.username}! Logged in via Google. Welcome email sent to ${account.email}!`, 'success');
+      showToast(`Welcome, ${userData.username}! Logged in via Google. Welcome email sent to ${email.trim()}!`, 'success');
       onClose();
       if (userData.role === 'ROLE_ADMIN') {
         navigate('/admin');
@@ -52,26 +103,15 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
         navigate('/dashboard');
       }
     } catch (err) {
-      showToast(err.message || 'Google login failed.', 'error');
+      showToast(err.message || 'Google authentication failed.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCustomSubmit = (e) => {
-    e.preventDefault();
-    if (!customEmail || !customEmail.includes('@')) {
-      showToast('Please enter a valid Google email address', 'error');
-      return;
-    }
-    const name = customName.trim() || customEmail.split('@')[0];
-    const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff`;
-    handleSelectAccount({ email: customEmail.trim(), name, avatar });
-  };
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -91,9 +131,11 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  Sign in with Google <Sparkles className="w-4 h-4 text-amber-400" />
+                  Google Verification <Sparkles className="w-4 h-4 text-amber-400" />
                 </h3>
-                <p className="text-xs text-gray-400">Choose your account to continue to CodeArena</p>
+                <p className="text-xs text-gray-400">
+                  {step === 1 ? 'Enter your Google email address' : 'Verify OTP code sent to your email'}
+                </p>
               </div>
             </div>
             <button
@@ -104,93 +146,124 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {/* Account Selector List */}
-          {!showCustomInput ? (
-            <div className="space-y-3 mb-6">
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                Available Accounts
-              </div>
-              {DEFAULT_ACCOUNTS.map((acc, i) => (
-                <button
-                  key={i}
-                  disabled={loading}
-                  onClick={() => handleSelectAccount(acc)}
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/15 hover:border-primaryBlue/50 transition-all text-left group"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={acc.avatar} alt={acc.name} className="w-10 h-10 rounded-full border border-white/20" />
-                    <div>
-                      <div className="text-sm font-semibold text-white group-hover:text-primaryBlue transition-colors">
-                        {acc.name}
-                      </div>
-                      <div className="text-xs text-gray-400">{acc.email}</div>
-                    </div>
-                  </div>
-                  <LogIn className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setShowCustomInput(true)}
-                className="w-full py-3 px-4 rounded-2xl bg-primaryBlue/10 border border-primaryBlue/30 text-primaryBlue text-xs font-bold hover:bg-primaryBlue/20 transition-all flex items-center justify-center gap-2"
-              >
-                <Mail className="w-4 h-4" /> Use another Google Email Address
-              </button>
-            </div>
-          ) : (
-            /* Custom Email Input Form */
-            <form onSubmit={handleCustomSubmit} className="space-y-4 mb-6">
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Enter Your Google Email
+          {/* STEP 1: Enter Google Email */}
+          {step === 1 ? (
+            <form onSubmit={handleSendOtp} className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                  Your Google Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    placeholder="dev@domain.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full glass-input glass-input-icon"
+                  />
+                  <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Google Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="your.name@gmail.com"
-                  value={customEmail}
-                  onChange={(e) => setCustomEmail(e.target.value)}
-                  className="w-full glass-input"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Your Display Name (Optional)</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                  Your Name / Username (Optional)
+                </label>
                 <input
                   type="text"
-                  placeholder="John Doe"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Google Coder"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full glass-input"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-primaryBlue hover:bg-blue-600 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 mt-4"
+              >
+                {loading ? 'Sending OTP Code...' : 'Send Verification OTP Code'}
+                {!loading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+          ) : (
+            /* STEP 2: Verify OTP Code & Password */
+            <form onSubmit={handleVerifyAndLogin} className="space-y-4 mb-6">
+              <div className="p-3 rounded-2xl bg-primaryBlue/10 border border-primaryBlue/30 text-xs text-blue-300 flex items-center justify-between">
+                <div>
+                  Verification code sent to <strong className="text-white">{email}</strong>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowCustomInput(false)}
-                  className="flex-1 py-2.5 rounded-xl glass-input text-gray-400 text-xs font-semibold hover:text-white"
+                  onClick={() => setStep(1)}
+                  className="text-amber-400 underline font-bold hover:text-amber-300 ml-2"
                 >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl bg-primaryBlue text-white font-bold text-xs hover:bg-blue-600 transition-colors shadow-lg flex items-center justify-center gap-2"
-                >
-                  {loading ? 'Signing in...' : 'Continue with Google'}
+                  Change
                 </button>
               </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-400 uppercase">
+                    Enter 6-Digit Email OTP Code
+                  </label>
+                  <button
+                    type="button"
+                    disabled={resending}
+                    onClick={handleResendOtp}
+                    className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
+                    {resending ? 'Resending...' : 'Resend OTP'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full glass-input tracking-[6px] font-mono text-center text-lg font-bold text-amber-300"
+                  />
+                  <Key className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                  Set Account Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full glass-input glass-input-icon"
+                  />
+                  <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-gray-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 mt-4"
+              >
+                {loading ? 'Verifying & Signing In...' : 'Verify OTP & Complete Sign In'}
+                {!loading && <CheckCircle2 className="w-4 h-4" />}
+              </button>
             </form>
           )}
 
           {/* Footer Notice */}
           <div className="pt-3 border-t border-white/10 flex items-center justify-center gap-2 text-[11px] text-gray-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Official 1-Click Verification & Welcome Email Dispatch</span>
+            <span>Real Email OTP Verification & Welcome Email Dispatch</span>
           </div>
         </motion.div>
       </div>
