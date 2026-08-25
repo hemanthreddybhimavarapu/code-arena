@@ -22,19 +22,23 @@ public class DatabaseConfig {
         }
 
         if (rawUrl != null && !rawUrl.isBlank()) {
-            String cleanUrl = rawUrl.trim();
-            if (cleanUrl.startsWith("postgres://") || cleanUrl.startsWith("postgresql://")) {
+            String clean = rawUrl.trim();
+            String uriString = clean;
+            if (uriString.startsWith("jdbc:")) {
+                uriString = uriString.substring(5);
+            }
+            if (uriString.startsWith("postgres://")) {
+                uriString = "postgresql://" + uriString.substring("postgres://".length());
+            }
+
+            if (uriString.startsWith("postgresql://")) {
                 try {
-                    String uriString = cleanUrl.replace("jdbc:", "");
-                    if (uriString.startsWith("postgres://")) {
-                        uriString = "postgresql://" + uriString.substring("postgres://".length());
-                    }
                     URI uri = new URI(uriString);
                     String host = uri.getHost();
                     int port = uri.getPort() != -1 ? uri.getPort() : 5432;
                     String path = uri.getPath();
 
-                    String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
+                    String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + (path != null ? path : "/codearena");
                     properties.setUrl(jdbcUrl);
 
                     if (uri.getUserInfo() != null && !uri.getUserInfo().isBlank()) {
@@ -45,13 +49,10 @@ public class DatabaseConfig {
                         }
                     }
                 } catch (Exception e) {
-                    if (!cleanUrl.startsWith("jdbc:")) {
-                        cleanUrl = "jdbc:" + cleanUrl;
-                    }
-                    properties.setUrl(cleanUrl);
+                    properties.setUrl(clean);
                 }
             } else {
-                properties.setUrl(cleanUrl);
+                properties.setUrl(clean);
             }
         }
 
