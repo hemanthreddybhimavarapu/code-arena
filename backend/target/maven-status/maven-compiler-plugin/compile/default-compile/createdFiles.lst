@@ -41,6 +41,7 @@ com\codearena\dto\DiscussionDto.class
 com\codearena\exception\BadRequestException.class
 com\codearena\repository\LeaderboardEntryRepository.class
 com\codearena\dto\ApiResponse.class
+com\codearena\util\AdminUtils.class
 com\codearena\controller\LeaderboardController.class
 com\codearena\security\UserPrincipal.class
 com\codearena\entity\Discussion$DiscussionBuilder.class
