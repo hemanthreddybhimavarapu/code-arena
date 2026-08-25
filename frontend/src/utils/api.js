@@ -16,11 +16,17 @@ export const getApiBaseUrl = () => {
     }
     return clean;
   }
-  return 'https://code-arena-backend-pjh9.onrender.com/api';
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api';
+  }
+  return 'http://localhost:9090/api';
 };
 
 export const getBackendOrigin = () => {
   const baseUrl = getApiBaseUrl();
+  if (baseUrl === '/api' || baseUrl.startsWith('/')) {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
   return baseUrl.replace(/\/api\/?$/, '');
 };
 
