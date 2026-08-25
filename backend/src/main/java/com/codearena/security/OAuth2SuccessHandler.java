@@ -59,11 +59,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String referer = request.getHeader("Referer");
         String origin = request.getHeader("Origin");
         String refHeader = referer != null ? referer : origin;
-        String defaultFrontend = (configuredFrontendUrl != null && !configuredFrontendUrl.isBlank()) 
+        String defaultFrontend = (configuredFrontendUrl != null && !configuredFrontendUrl.isBlank() && !configuredFrontendUrl.contains("localhost")) 
                 ? configuredFrontendUrl.replaceAll("/+$", "") 
-                : "http://localhost:5173";
+                : "https://code-arena-three-beryl.vercel.app";
         String frontendUrl = defaultFrontend;
-        if (refHeader != null && (refHeader.contains("http://") || refHeader.contains("https://"))) {
+        if (refHeader != null && (refHeader.contains("http://") || refHeader.contains("https://")) && !refHeader.contains("google.com") && !refHeader.contains("google.co")) {
             try {
                 java.net.URI uri = new java.net.URI(refHeader);
                 frontendUrl = uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "");
