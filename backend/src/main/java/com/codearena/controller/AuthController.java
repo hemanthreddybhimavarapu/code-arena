@@ -52,6 +52,18 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful!", response));
     }
 
+    @PostMapping("/google-login")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String username = body.get("username");
+        String avatar = body.get("avatar");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Email is required"));
+        }
+        AuthResponse response = authService.processGoogleLogin(email, username, avatar);
+        return ResponseEntity.ok(ApiResponse.success("Google login successful!", response));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String otp = authService.forgotPassword(request);

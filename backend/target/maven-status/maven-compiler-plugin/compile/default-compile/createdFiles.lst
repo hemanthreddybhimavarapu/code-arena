@@ -68,6 +68,7 @@ com\codearena\service\DashboardService.class
 com\codearena\dto\SubmissionResultDto$SubmissionResultDtoBuilder.class
 com\codearena\service\AuthService.class
 com\codearena\entity\Tag.class
+com\codearena\config\DatabaseConfig.class
 com\codearena\entity\Bookmark$BookmarkBuilder.class
 com\codearena\dto\SubmissionResponse$SubmissionResponseBuilder.class
 com\codearena\service\EmailService.class

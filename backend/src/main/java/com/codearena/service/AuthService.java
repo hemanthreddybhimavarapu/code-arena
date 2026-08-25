@@ -391,4 +391,102 @@ public class AuthService {
         int otpNum = 100000 + rand.nextInt(900000);
         return String.valueOf(otpNum);
     }
+
+    @Transactional
+    public AuthResponse processGoogleLogin(String email, String username, String avatar) {
+        String cleanEmail = email.trim().toLowerCase();
+        String cleanUsername = (username != null && !username.isBlank()) 
+                ? username.trim() 
+                : cleanEmail.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "");
+        if (cleanUsername.isEmpty() || cleanUsername.length() < 3) {
+            cleanUsername = "google_user_" + System.currentTimeMillis() % 10000;
+        }
+
+        User user = userRepository.findByEmail(cleanEmail).orElse(null);
+
+        if (user == null) {
+            if (userRepository.existsByUsername(cleanUsername)) {
+                cleanUsername = cleanUsername + "_" + String.valueOf(System.currentTimeMillis() % 1000);
+            }
+
+            Role role;
+            if (AdminUtils.isAdminEmailOrUsername(cleanEmail, cleanUsername)) {
+                role = roleRepository.findByName("ROLE_ADMIN").orElse(null);
+            } else {
+                role = roleRepository.findByName("ROLE_USER").orElse(null);
+            }
+            if (role == null) {
+                role = roleRepository.findAll().stream().findFirst().orElse(null);
+            }
+
+            String randomPassword = java.util.UUID.randomUUID().toString();
+            user = User.builder()
+                    .username(cleanUsername)
+                    .email(cleanEmail)
+                    .password(passwordEncoder.encode(randomPassword))
+                    .avatar((avatar != null && !avatar.isBlank()) ? avatar : "https://api.dicebear.com/7.x/initials/svg?seed=" + cleanUsername + "&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff&fontSize=42&fontWeight=700")
+                    .role(role)
+                    .isVerified(true)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            user = userRepository.save(user);
+
+            try {
+                if (streakRepository.findByUserId(user.getId()).isEmpty()) {
+                    streakRepository.save(Streak.builder().user(user).currentStreak(0).longestStreak(0).build());
+                }
+            } catch (Exception ignored) {}
+
+            try {
+                if (leaderboardEntryRepository.findByUserId(user.getId()).isEmpty()) {
+                    leaderboardEntryRepository.save(LeaderboardEntry.builder()
+                            .user(user)
+                            .solvedCount(0)
+                            .score(0)
+                            .acceptanceRate(0.0)
+                            .totalExecutionTime(0L)
+                            .lastUpdated(LocalDateTime.now())
+                            .build());
+                }
+            } catch (Exception ignored) {}
+        } else {
+            if (AdminUtils.isAdminEmailOrUsername(user.getEmail(), user.getUsername())) {
+                if (user.getRole() == null || !"ROLE_ADMIN".equals(user.getRole().getName())) {
+                    Role adminRole = roleRepository.findByName("ROLE_ADMIN").orElse(null);
+                    if (adminRole != null) {
+                        user.setRole(adminRole);
+                        user = userRepository.save(user);
+                    }
+                }
+            }
+        }
+
+        // Send Welcome Email
+        final String sendToEmail = cleanEmail;
+        final String sendToName = user.getUsername();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                emailService.sendWelcomeEmail(sendToEmail, sendToName);
+                System.out.println(">>> Welcome email sent to Google user: " + sendToEmail);
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email: " + e.getMessage());
+            }
+        });
+
+        String token = tokenProvider.generateTokenFromUserId(user.getId());
+        String refreshToken = tokenProvider.generateRefreshTokenFromUserId(user.getId());
+
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().getName() : "ROLE_USER")
+                .avatar(user.getAvatar())
+                .name(user.getName())
+                .bio(user.getBio())
+                .solvedCount(leaderboardEntryRepository.findByUserId(user.getId()).map(LeaderboardEntry::getSolvedCount).orElse(0))
+                .build();
+    }
 }

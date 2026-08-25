@@ -8,6 +8,7 @@ import api, { getBackendOrigin } from '../utils/api';
 import PillNav from '../components/ui/PillNav';
 import aiAbstractAnimation from '../assets/lottie/ai_abstract.json';
 import PageTransition from '../components/ui/PageTransition';
+import GoogleAuthModal from '../components/GoogleAuthModal';
 
 const Register = () => {
   const { showToast, login, t, uiLanguage } = useApp();
@@ -18,6 +19,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
 
   // States
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -136,12 +138,12 @@ const Register = () => {
   };
 
   const handleGoogleLogin = () => {
-    const origin = getBackendOrigin();
-    window.location.href = origin + '/oauth2/authorization/google';
+    setShowGoogleModal(true);
   };
 
   return (
     <PageTransition key={uiLanguage} className="relative min-h-[calc(100vh-73px)] w-full flex items-center justify-center bg-darkBg text-white px-6 py-10 overflow-hidden">
+      <GoogleAuthModal isOpen={showGoogleModal} onClose={() => setShowGoogleModal(false)} />
       {/* Background Blobs */}
       <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-primaryBlue/10 blur-[80px] pointer-events-none" />
       <div className="absolute bottom-1/3 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 rounded-full bg-purple-600/10 blur-[80px] pointer-events-none" />
