@@ -1,70 +1,21 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, LogIn, Key, Lock, RefreshCw } from 'lucide-react';
+import { X, Mail, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, Key, Lock, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-
-const GOOGLE_ACCOUNTS = [
-  {
-    name: 'Hemanth Bhimavarupu',
-    email: 'iamhemanth9848@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=HemanthBhimavarupu&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-  {
-    name: 'B Hemantn',
-    email: 'bhemantn@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=BHemantn&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-  {
-    name: 'code arena 7.0',
-    email: 'codearena7.0@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=CodeArena7&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-  {
-    name: 'Vinay Jonnadula',
-    email: 'vinayjonnadula11@gmail.com',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=VinayJonnadula&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-  },
-];
 
 export default function GoogleAuthModal({ isOpen, onClose }) {
   const { login, showToast } = useApp();
   const navigate = useNavigate();
 
-  const [view, setView] = useState('picker'); // 'picker' | 'custom' | 'otp'
+  const [step, setStep] = useState(1); // 1 = Email Entry, 2 = OTP Code
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
-
-  const handleSelectAccount = async (acc) => {
-    setLoading(true);
-    try {
-      const res = await api.post('/auth/google-login', {
-        email: acc.email,
-        username: acc.name || acc.email.split('@')[0],
-        avatar: acc.avatar,
-      });
-
-      const userData = res.data.data;
-      login(userData, userData.token);
-      showToast(`Welcome, ${userData.username}! Logged in with Google. Welcome email sent to ${acc.email}!`, 'success');
-      onClose();
-      if (userData.role === 'ROLE_ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (err) {
-      showToast(err.message || 'Google login failed.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -78,10 +29,10 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
     try {
       await api.post('/auth/send-otp', { email: email.trim(), username: uname });
       showToast(`6-Digit OTP verification code sent to ${email.trim()}!`, 'success');
-      setView('otp');
+      setStep(2);
     } catch (err) {
       showToast(`Verification code sent to ${email.trim()}!`, 'info');
-      setView('otp');
+      setStep(2);
     } finally {
       setLoading(false);
     }
@@ -136,7 +87,7 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           className="relative w-full max-w-[440px] bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden font-sans text-slate-100 p-6"
         >
-          {/* Top Browser Bar simulation */}
+          {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
             <div className="flex items-center gap-2.5">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -155,54 +106,16 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {/* Heading */}
+          {/* Title */}
           <div className="mb-5">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Choose an account</h2>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <h2 className="text-xl font-bold text-white tracking-tight">Sign in with your Google Email</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
               to continue to <strong className="text-blue-400 font-semibold">CodeArena</strong>
             </p>
           </div>
 
-          {/* VIEW 1: Account Chooser List (Matching HackerRank screenshot) */}
-          {view === 'picker' && (
-            <div className="space-y-1 mb-5">
-              {GOOGLE_ACCOUNTS.map((acc, i) => (
-                <button
-                  key={i}
-                  disabled={loading}
-                  onClick={() => handleSelectAccount(acc)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-900/90 border border-transparent hover:border-slate-800 transition-all text-left group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <img src={acc.avatar} alt={acc.name} className="w-10 h-10 rounded-full border border-slate-700 object-cover" />
-                    <div>
-                      <div className="text-sm font-medium text-slate-100 group-hover:text-blue-400 transition-colors">
-                        {acc.name}
-                      </div>
-                      <div className="text-xs text-slate-400">{acc.email}</div>
-                    </div>
-                  </div>
-                  <LogIn className="w-4 h-4 text-slate-500 group-hover:text-slate-200 transition-colors" />
-                </button>
-              ))}
-
-              <div className="pt-2 border-t border-slate-800/60 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setView('custom')}
-                  className="w-full flex items-center gap-3.5 p-3 rounded-xl hover:bg-slate-900/90 text-left text-sm font-medium text-slate-300 hover:text-white transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:border-slate-700">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <span>Use another account</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 2: Custom Google Email Input */}
-          {view === 'custom' && (
+          {/* STEP 1: Enter Google Email */}
+          {step === 1 ? (
             <form onSubmit={handleSendOtp} className="space-y-4 mb-5">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">
@@ -237,10 +150,10 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setView('picker')}
+                  onClick={onClose}
                   className="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-400 text-xs font-semibold hover:text-white hover:bg-slate-900"
                 >
-                  Back
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -252,10 +165,8 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
                 </button>
               </div>
             </form>
-          )}
-
-          {/* VIEW 3: OTP Code Entry */}
-          {view === 'otp' && (
+          ) : (
+            /* STEP 2: OTP Code Entry */
             <form onSubmit={handleVerifyOtpAndLogin} className="space-y-4 mb-5">
               <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300">
                 Verification code sent to <strong className="text-white">{email}</strong>
@@ -282,7 +193,7 @@ export default function GoogleAuthModal({ isOpen, onClose }) {
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setView('custom')}
+                  onClick={() => setStep(1)}
                   className="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-400 text-xs font-semibold hover:text-white hover:bg-slate-900"
                 >
                   Back
