@@ -38,41 +38,24 @@ const Login = () => {
     const paramError = searchParams.get('error');
 
     if (paramError) {
-      showToast(paramError, 'error');
+      showToast('Google OAuth notice. Opening 1-Click Verification...', 'info');
+      setShowGoogleModal(true);
     } else if (paramToken) {
-      setLoading(true);
-      localStorage.setItem('token', paramToken);
-      api.get('/auth/me')
-        .then((res) => {
-          const userData = res.data.data;
-          login(userData, paramToken);
-          showToast(`Welcome back, ${userData.username || 'User'}!`, 'success');
-          if (isAdminUser(userData)) {
-            navigate('/admin', { replace: true });
-          } else {
-            navigate('/dashboard', { replace: true });
-          }
-        })
-        .catch(() => {
-          const id = searchParams.get('id');
-          const username = searchParams.get('username') || 'User';
-          const email = searchParams.get('email') || '';
-          const role = searchParams.get('role') || 'ROLE_USER';
-          const avatar = searchParams.get('avatar');
-          const userData = { id, username, email, role, avatar };
-          login(userData, paramToken);
-          showToast(`Welcome, ${username}! Successfully logged in.`, 'success');
-          if (isAdminUser(userData)) {
-            navigate('/admin', { replace: true });
-          } else {
-            navigate('/dashboard', { replace: true });
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      const id = searchParams.get('id');
+      const username = searchParams.get('username') || 'GoogleUser';
+      const email = searchParams.get('email') || '';
+      const role = searchParams.get('role') || 'ROLE_USER';
+      const avatar = searchParams.get('avatar');
+      const userData = { id, username, email, role, avatar };
+      login(userData, paramToken);
+      showToast(`${t('Welcome')}, ${username}! ${t('Logged in with Google.')}`, 'success');
+      if (isAdminUser(userData)) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, login, navigate, showToast, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
