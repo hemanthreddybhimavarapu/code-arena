@@ -18,6 +18,12 @@ public class DatabaseConfig {
             rawUrl = System.getenv("DATABASE_URL");
         }
         if (rawUrl == null || rawUrl.isBlank()) {
+            rawUrl = System.getenv("INTERNAL_DATABASE_URL");
+        }
+        if (rawUrl == null || rawUrl.isBlank()) {
+            rawUrl = System.getenv("EXTERNAL_DATABASE_URL");
+        }
+        if (rawUrl == null || rawUrl.isBlank()) {
             rawUrl = properties.getUrl();
         }
 
