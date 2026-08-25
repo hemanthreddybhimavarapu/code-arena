@@ -16,7 +16,7 @@ export const getApiBaseUrl = () => {
     }
     return clean;
   }
-  return 'http://localhost:8080/api';
+  return 'https://code-arena-backend-pjh9.onrender.com/api';
 };
 
 export const getBackendOrigin = () => {
