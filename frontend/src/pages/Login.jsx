@@ -37,16 +37,20 @@ const Login = () => {
     const paramToken = searchParams.get('token');
     const paramError = searchParams.get('error');
 
-    if (paramError) {
-      showToast('Google OAuth notice. Opening 1-Click Verification...', 'info');
-      setShowGoogleModal(true);
-    } else if (paramToken) {
+    if (paramToken) {
       const id = searchParams.get('id');
       const username = searchParams.get('username') || 'GoogleUser';
       const email = searchParams.get('email') || '';
       const role = searchParams.get('role') || 'ROLE_USER';
       const avatar = searchParams.get('avatar');
       const userData = { id, username, email, role, avatar };
+
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: paramToken, userData }, '*');
+        window.close();
+        return;
+      }
+
       login(userData, paramToken);
       showToast(`${t('Welcome')}, ${username}! ${t('Logged in with Google.')}`, 'success');
       if (isAdminUser(userData)) {
@@ -54,8 +58,56 @@ const Login = () => {
       } else {
         navigate('/dashboard', { replace: true });
       }
+    } else if (paramError) {
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: paramError }, '*');
+        window.close();
+        return;
+      }
+      showToast('Google OAuth notice. Opening 1-Click Verification...', 'info');
+      setShowGoogleModal(true);
     }
   }, [searchParams, login, navigate, showToast, t]);
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+        const { token: userToken, userData } = event.data;
+        login(userData, userToken);
+        showToast(`Welcome, ${userData.username || 'User'}! Logged in with Google.`, 'success');
+        if (isAdminUser(userData)) {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      } else if (event.data && event.data.type === 'GOOGLE_AUTH_ERROR') {
+        setShowGoogleModal(true);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [login, navigate, showToast]);
+
+  const handleGoogleLogin = () => {
+    const origin = getBackendOrigin();
+    const oauthUrl = origin + '/oauth2/authorization/google';
+
+    const width = 500;
+    const height = 650;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      oauthUrl,
+      'GoogleOAuthAccountChooserPopup',
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
+    );
+
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      window.location.href = oauthUrl;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,10 +135,6 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    setShowGoogleModal(true);
   };
 
   return (
