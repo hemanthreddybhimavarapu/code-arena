@@ -13,12 +13,12 @@ public class DatabaseConfig {
     @Bean
     @Primary
     public DataSource dataSource(DataSourceProperties properties) {
-        String rawUrl = properties.getUrl();
-        if (rawUrl == null || rawUrl.isBlank()) {
-            rawUrl = System.getenv("SPRING_DATASOURCE_URL");
-        }
+        String rawUrl = System.getenv("SPRING_DATASOURCE_URL");
         if (rawUrl == null || rawUrl.isBlank()) {
             rawUrl = System.getenv("DATABASE_URL");
+        }
+        if (rawUrl == null || rawUrl.isBlank()) {
+            rawUrl = properties.getUrl();
         }
 
         if (rawUrl != null && !rawUrl.isBlank()) {
