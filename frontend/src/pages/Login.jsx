@@ -101,18 +101,8 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    const googleUser = {
-      id: 888,
-      username: 'Google_User',
-      email: 'user.google@gmail.com',
-      role: 'ROLE_USER',
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=GoogleUser&backgroundColor=0f172a,1e293b,334155,1e1b4b,0f766e,312e81&textColor=ffffff',
-      currentStreak: 5,
-      score: 1450,
-    };
-    login(googleUser, 'jwt-google-user-authenticated-token');
-    showToast(`${t('Welcome')}, ${googleUser.username}! ${t('Logged in with Google.')}`, 'success');
-    navigate('/dashboard');
+    const origin = getBackendOrigin();
+    window.location.href = origin + '/oauth2/authorization/google';
   };
 
   return (
