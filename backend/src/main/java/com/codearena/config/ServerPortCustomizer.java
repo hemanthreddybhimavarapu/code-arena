@@ -21,9 +21,9 @@ public class ServerPortCustomizer implements WebServerFactoryCustomizer<TomcatSe
                 return;
             } catch (NumberFormatException ignored) {}
         }
-        int defaultPort = 8080;
+        int defaultPort = 9090;
         if (!isPortAvailable(defaultPort)) {
-            int fallbackPort = findAvailablePort(8081);
+            int fallbackPort = findAvailablePort(9091);
             System.out.println(">>> Port " + defaultPort + " is occupied. Automatically using fallback port " + fallbackPort + " <<<");
             factory.setPort(fallbackPort);
         }
