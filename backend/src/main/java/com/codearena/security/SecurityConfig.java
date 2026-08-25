@@ -77,6 +77,19 @@ public class SecurityConfig {
                 // Any other request must be authenticated
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    String reqUri = request.getRequestURI();
+                    if (reqUri != null && reqUri.contains("/oauth2/")) {
+                        String targetFrontend = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "https://code-arena-three-beryl.vercel.app";
+                        response.sendRedirect(targetFrontend + "/login?error=" + java.net.URLEncoder.encode(authException.getMessage() != null ? authException.getMessage() : "Authentication required", "UTF-8"));
+                    } else {
+                        response.setContentType("application/json");
+                        response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("{\"success\":false,\"message\":\"Unauthorized access\"}");
+                    }
+                })
+            )
             .oauth2Login(oauth -> oauth
                 .authorizationEndpoint(authorization -> authorization
                     .authorizationRequestResolver(authorizationRequestResolver(clientRegistrationRepository))
@@ -85,7 +98,7 @@ public class SecurityConfig {
                 .failureHandler((request, response, exception) -> {
                     System.err.println(">>> OAuth2 Login Failure: " + exception.getMessage());
                     String msg = exception.getMessage() != null ? exception.getMessage() : "Google OAuth authentication failed";
-                    String targetFrontend = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "http://localhost:5173";
+                    String targetFrontend = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "https://code-arena-three-beryl.vercel.app";
                     response.sendRedirect(targetFrontend + "/login?error=" + java.net.URLEncoder.encode(msg, "UTF-8"));
                 })
             );
