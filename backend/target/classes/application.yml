@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   config:
@@ -25,9 +25,9 @@ spring:
               - profile
   
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:codearena}}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:codearena}}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -58,9 +58,16 @@ spring:
             trust: smtp.gmail.com
 
 app:
+  frontend:
+    url: ${APP_FRONTEND_URL:${FRONTEND_URL:http://localhost:5173}}
+  backend:
+    url: ${APP_BACKEND_URL:${BACKEND_URL:http://localhost:8080}}
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
   jwt:
     secret: ${JWT_SECRET:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}
     # 24 Hours
     expiration-ms: 86400000
     # 7 Days for Remember Me
     refresh-expiration-ms: 604800000
+

@@ -2,7 +2,11 @@ import axios from 'axios';
 
 export const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    let clean = import.meta.env.VITE_API_URL.trim();
+    if (!clean.endsWith('/api')) {
+      clean = clean.replace(/\/+$/, '') + '/api';
+    }
+    return clean;
   }
   const storedUrl = localStorage.getItem('custom_backend_url');
   if (storedUrl && storedUrl.trim()) {

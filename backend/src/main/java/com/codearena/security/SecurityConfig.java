@@ -20,8 +20,11 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +35,12 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2SuccessHandler oauth2SuccessHandler;
     private final ClientRegistrationRepository clientRegistrationRepository;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}")
+    private String allowedOriginsConfig;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, OAuth2SuccessHandler oauth2SuccessHandler, ClientRegistrationRepository clientRegistrationRepository) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -76,7 +85,8 @@ public class SecurityConfig {
                 .failureHandler((request, response, exception) -> {
                     System.err.println(">>> OAuth2 Login Failure: " + exception.getMessage());
                     String msg = exception.getMessage() != null ? exception.getMessage() : "Google OAuth authentication failed";
-                    response.sendRedirect("http://localhost:5173/login?error=" + java.net.URLEncoder.encode(msg, "UTF-8"));
+                    String targetFrontend = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "http://localhost:5173";
+                    response.sendRedirect(targetFrontend + "/login?error=" + java.net.URLEncoder.encode(msg, "UTF-8"));
                 })
             );
 
@@ -88,7 +98,20 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*")); // Dynamically match any Vite port
+        List<String> origins = new ArrayList<>();
+        if (allowedOriginsConfig != null && !allowedOriginsConfig.isBlank()) {
+            for (String origin : allowedOriginsConfig.split(",")) {
+                if (!origin.trim().isEmpty()) {
+                    origins.add(origin.trim());
+                }
+            }
+        }
+        // Always include dev defaults and Vercel wildcard patterns if not present
+        if (!origins.contains("http://localhost:*")) origins.add("http://localhost:*");
+        if (!origins.contains("http://127.0.0.1:*")) origins.add("http://127.0.0.1:*");
+        if (!origins.contains("https://*.vercel.app")) origins.add("https://*.vercel.app");
+
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));

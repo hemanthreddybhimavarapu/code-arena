@@ -15,6 +15,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String smtpUsername;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -155,7 +158,7 @@ public class EmailService {
                     </div>
 
                     <div style="text-align: center; margin: 30px 0;">
-                      <a href="http://localhost:5173/problems" class="btn-primary">Start Solving Problems Now &rarr;</a>
+                      <a href="%s/problems" class="btn-primary">Start Solving Problems Now &rarr;</a>
                     </div>
 
                     <p class="text-body" style="font-size: 14px; margin-bottom: 0;">
@@ -170,7 +173,7 @@ public class EmailService {
                   </div>
                 </body>
                 </html>
-                """.formatted(firstName, to);
+                """.formatted(firstName, (frontendUrl != null ? frontendUrl.replaceAll("/+$", "") : "http://localhost:5173"), to);
         sendHtmlEmail(to, subject, content);
     }
 

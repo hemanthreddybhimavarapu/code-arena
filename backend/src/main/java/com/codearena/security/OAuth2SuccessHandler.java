@@ -36,6 +36,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
+    private String configuredFrontendUrl;
+
     public OAuth2SuccessHandler(UserRepository userRepository, RoleRepository roleRepository,
             LeaderboardEntryRepository leaderboardEntryRepository, StreakRepository streakRepository,
             JwtTokenProvider tokenProvider,
@@ -56,8 +59,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String referer = request.getHeader("Referer");
         String origin = request.getHeader("Origin");
         String refHeader = referer != null ? referer : origin;
-        String frontendUrl = "http://localhost:5173";
-        if (refHeader != null && refHeader.contains("localhost:")) {
+        String defaultFrontend = (configuredFrontendUrl != null && !configuredFrontendUrl.isBlank()) 
+                ? configuredFrontendUrl.replaceAll("/+$", "") 
+                : "http://localhost:5173";
+        String frontendUrl = defaultFrontend;
+        if (refHeader != null && (refHeader.contains("http://") || refHeader.contains("https://"))) {
             try {
                 java.net.URI uri = new java.net.URI(refHeader);
                 frontendUrl = uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "");

@@ -12,6 +12,15 @@ public class ServerPortCustomizer implements WebServerFactoryCustomizer<TomcatSe
 
     @Override
     public void customize(TomcatServletWebServerFactory factory) {
+        String envPort = System.getenv("PORT");
+        if (envPort != null && !envPort.isBlank()) {
+            try {
+                int port = Integer.parseInt(envPort.trim());
+                factory.setPort(port);
+                System.out.println(">>> Server running on configured PORT environment variable: " + port + " <<<");
+                return;
+            } catch (NumberFormatException ignored) {}
+        }
         int defaultPort = 8080;
         if (!isPortAvailable(defaultPort)) {
             int fallbackPort = findAvailablePort(8081);

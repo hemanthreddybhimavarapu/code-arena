@@ -16,12 +16,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
+
 @RestController
 @RequestMapping("/api/files")
 @CrossOrigin(origins = "*")
 public class FileController {
 
     private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+
+    @Value("${app.backend.url:http://localhost:8080}")
+    private String backendUrl;
 
     public FileController() {
         try {
@@ -44,7 +49,8 @@ public class FileController {
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            String fileDownloadUrl = "http://localhost:8080/api/files/download/" + fileName;
+            String base = (backendUrl != null && !backendUrl.isBlank()) ? backendUrl.replaceAll("/+$", "") : "http://localhost:8080";
+            String fileDownloadUrl = base + "/api/files/download/" + fileName;
             return ResponseEntity.ok(ApiResponse.success("File uploaded successfully", fileDownloadUrl));
         } catch (IOException ex) {
             return ResponseEntity.status(500).body(ApiResponse.error("Could not store file. Please try again!"));
