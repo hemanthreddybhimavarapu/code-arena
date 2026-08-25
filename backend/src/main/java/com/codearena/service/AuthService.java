@@ -67,6 +67,7 @@ public class AuthService {
                 .build();
 
         otpRepository.save(otp);
+        System.out.println(">>> REGISTRATION OTP GENERATED for " + cleanEmail + " -> OTP Code: " + otpCode);
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 emailService.sendVerificationOtp(cleanEmail, username, otpCode);

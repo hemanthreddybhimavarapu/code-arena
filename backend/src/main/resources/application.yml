@@ -55,8 +55,10 @@ spring:
           auth: ${SMTP_AUTH:true}
           starttls:
             enable: ${SMTP_STARTTLS:true}
+            required: ${SMTP_STARTTLS_REQUIRED:true}
           ssl:
             trust: smtp.gmail.com
+            protocols: TLSv1.2 TLSv1.3
 
 app:
   frontend:
